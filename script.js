@@ -259,22 +259,26 @@
       submitBtn.textContent = 'Odesílám...';
     }
 
-    // Simulate async submission (replace with real fetch() when backend exists)
-    setTimeout(function () {
-      var simulatedSuccess = true; // toggle to false to test error path
+    var formData = new FormData(form);
 
-      if (simulatedSuccess) {
-        // Hide the form
-        form.style.display = 'none';
-
-        // Show the success message using the CSS-driven approach
-        if (successBox) {
-          successBox.classList.add('is-visible');
-          successBox.removeAttribute('aria-hidden');
-          successBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    fetch('/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams(formData).toString()
+    })
+      .then(function (response) {
+        if (response.ok) {
+          form.style.display = 'none';
+          if (successBox) {
+            successBox.classList.add('is-visible');
+            successBox.removeAttribute('aria-hidden');
+            successBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        } else {
+          throw new Error('Server error');
         }
-      } else {
-        // Error recovery: re-enable submit button and show error message
+      })
+      .catch(function () {
         if (submitBtn) {
           submitBtn.disabled = false;
           submitBtn.textContent = 'Odeslat poptávku \u2192';
@@ -287,8 +291,7 @@
           submitBtn.insertAdjacentElement('beforebegin', submitErrorEl);
         }
         submitErrorEl.textContent = 'Odeslání se nezdařilo. Zkuste to prosím znovu nebo nás kontaktujte telefonicky.';
-      }
-    }, 800);
+      });
   });
 })();
 
