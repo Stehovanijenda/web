@@ -183,6 +183,34 @@ textarea {
   outline-offset: 3px;
 }
 
+.btn-whatsapp {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #25D366;
+  color: var(--white);
+  border: 2px solid #25D366;
+  padding: 14px 28px;
+  border-radius: 4px;
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 16px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transition: background var(--transition-fast), transform var(--transition-fast);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-whatsapp:hover,
+.btn-whatsapp:focus-visible {
+  background: #1ebe5d;
+  border-color: #1ebe5d;
+  color: var(--white);
+  transform: scale(1.02);
+}
+
 .btn-ghost {
   display: inline-flex;
   align-items: center;
@@ -2144,6 +2172,12 @@ textarea {
 /* --------------------------------------------------------------------------
    21. SMALL MOBILE (below 480px)
    -------------------------------------------------------------------------- */
+@media (max-width: 767px) {
+  .top-bar__hide-mobile {
+    display: none;
+  }
+}
+
 @media (max-width: 479px) {
   .top-bar__inner {
     justify-content: center;

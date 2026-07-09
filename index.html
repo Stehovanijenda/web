@@ -118,10 +118,10 @@
   <!-- SEKCE 0: TOP BAR -->
   <div class="top-bar" aria-label="Kontaktní informace">
     <div class="container top-bar__inner">
-      <span>Po–Pá: 7:00–19:00, So: 8:00–14:00</span>
-      <span class="top-bar__separator">|</span>
-      <span>&#128205; Karlovarský kraj</span>
-      <span class="top-bar__separator">|</span>
+      <span class="top-bar__hide-mobile">Po–Pá: 7:00–19:00, So: 8:00–14:00</span>
+      <span class="top-bar__separator top-bar__hide-mobile">|</span>
+      <span class="top-bar__hide-mobile">&#128205; Karlovarský kraj</span>
+      <span class="top-bar__separator top-bar__hide-mobile">|</span>
       <span><a href="tel:+420739851392" class="top-bar__link">&#128222; +420 739 851 392</a></span>
       <span class="top-bar__separator">|</span>
       <a href="#kontakt" class="top-bar__btn">Nezávazná poptávka</a>
@@ -194,6 +194,10 @@
 
           <div class="hero__cta">
             <a href="#kontakt" class="btn-primary">Nezávazná poptávka zdarma</a>
+            <a href="https://wa.me/420739851392" class="btn-whatsapp" target="_blank" rel="noopener" aria-label="Napište nám na WhatsApp">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="flex-shrink:0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.122 1.532 5.852L.057 23.486a.5.5 0 0 0 .612.612l5.534-1.474A11.943 11.943 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.882a9.871 9.871 0 0 1-5.031-1.378l-.36-.214-3.733.994.994-3.733-.214-.36A9.871 9.871 0 0 1 2.118 12C2.118 6.527 6.527 2.118 12 2.118S21.882 6.527 21.882 12 17.473 21.882 12 21.882z"/></svg>
+              WhatsApp
+            </a>
             <a href="tel:+420739851392" class="btn-ghost">&#128222; +420 739 851 392</a>
           </div>
 
@@ -626,6 +630,10 @@
         </div>
         <div class="cta-banner__actions">
           <a href="#kontakt" class="btn-dark">Odeslat poptávku</a>
+          <a href="https://wa.me/420739851392" class="btn-whatsapp" target="_blank" rel="noopener" aria-label="Napište nám na WhatsApp">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="flex-shrink:0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.122 1.532 5.852L.057 23.486a.5.5 0 0 0 .612.612l5.534-1.474A11.943 11.943 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.882a9.871 9.871 0 0 1-5.031-1.378l-.36-.214-3.733.994.994-3.733-.214-.36A9.871 9.871 0 0 1 2.118 12C2.118 6.527 6.527 2.118 12 2.118S21.882 6.527 21.882 12 17.473 21.882 12 21.882z"/></svg>
+            WhatsApp
+          </a>
           <a href="tel:+420739851392" class="btn-ghost">&#128222; +420 739 851 392</a>
         </div>
       </div>
@@ -680,11 +688,15 @@
                 <label class="form__label" for="type">Typ stěhování <span class="form__required" aria-hidden="true">*</span></label>
                 <select class="form__input form__select" id="type" name="type" required aria-required="true">
                   <option value="" disabled selected>Vyberte typ</option>
-                  <option value="byt">Byt</option>
+                  <option value="byt-1+1">Byt 1+1</option>
+                  <option value="byt-2+1">Byt 2+1</option>
+                  <option value="byt-3+1">Byt 3+1</option>
+                  <option value="byt-4+1">Byt 4+1</option>
                   <option value="dum">Dům</option>
                   <option value="firma">Firma</option>
                   <option value="vyklizeni">Vyklízení</option>
-                  <option value="jine">Jiné</option>
+                  <option value="par-kusu">Pár kusů nábytku</option>
+                  <option value="tezke-kusy">Těžké kusy – gauč, piáno…</option>
                 </select>
                 <span class="form__error" id="type-error" role="alert"></span>
               </div>
@@ -696,7 +708,7 @@
 
             <div class="form__group">
               <label class="form__label" for="message">Zpráva</label>
-              <textarea class="form__input form__textarea" id="message" name="message" rows="4" placeholder="Např. máme piano, 3 patra bez výtahu..."></textarea>
+              <textarea class="form__input form__textarea" id="message" name="message" rows="5" placeholder="Pro přesnější nabídku nám napište: ze kterého do kterého patra stěhujete a zda je výtah. Jaké velké předměty se budou stěhovat (gauč, lednice, piano…). Popřípadě další komplikace, které bychom měli vědět."></textarea>
             </div>
 
             <div class="form__group form__group--checkbox">
