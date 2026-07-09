@@ -274,6 +274,13 @@
             successBox.removeAttribute('aria-hidden');
             successBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
           }
+          if (typeof gtag === 'function') {
+            gtag('event', 'conversion', {
+              'send_to': 'AW-18260392465/GO37CNPass0cEJH0nYNE',
+              'value': 1.0,
+              'currency': 'CZK'
+            });
+          }
         } else {
           throw new Error('Server error');
         }
