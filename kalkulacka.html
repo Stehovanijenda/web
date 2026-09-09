@@ -228,6 +228,21 @@
       display: inline-block;
     }
 
+    .customer-info {
+      padding: 0.7rem 1rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--orange-light);
+      font-size: 0.8rem;
+    }
+    .customer-info .ci-row {
+      display: flex;
+      gap: 0.4rem;
+      margin-bottom: 0.15rem;
+    }
+    .customer-info .ci-row:last-child { margin-bottom: 0; }
+    .customer-info .ci-label { color: var(--muted); font-weight: 600; white-space: nowrap; }
+    .customer-info .ci-value { color: var(--text); font-weight: 600; word-break: break-word; }
+
     .breakdown-list { }
     .bi {
       display: flex; justify-content: space-between; align-items: center;
@@ -311,6 +326,18 @@
         <div class="field">
           <label>Datum stěhování</label>
           <input type="text" id="move-date" placeholder="dd.mm.rrrr" style="width:120px">
+        </div>
+        <div class="field">
+          <label>Telefon</label>
+          <input type="text" id="customer-phone" placeholder="+420 123 456 789" style="width:180px">
+        </div>
+        <div class="field">
+          <label>Adresa stěhování — Odkud</label>
+          <input type="text" id="move-from" placeholder="Ulice, město" style="width:220px">
+        </div>
+        <div class="field">
+          <label>Adresa stěhování — Kam</label>
+          <input type="text" id="move-to" placeholder="Ulice, město" style="width:220px">
         </div>
       </div>
     </div>
@@ -414,15 +441,6 @@
             <span class="toggle-track"></span>
           </label>
         </div>
-        <div class="field" style="margin-top:0.4rem;">
-          <label>Vyklízení na místě
-            <small>Rozebrání, demolice, výnos odpadu — zahrni do hodin práce</small>
-          </label>
-          <label class="toggle">
-            <input type="checkbox" id="clearance-load">
-            <span class="toggle-track"></span>
-          </label>
-        </div>
       </div>
     </div>
 
@@ -460,15 +478,6 @@
           <label>Sklep / garáž navíc</label>
           <label class="toggle">
             <input type="checkbox" id="basement-unload">
-            <span class="toggle-track"></span>
-          </label>
-        </div>
-        <div class="field" style="margin-top:0.4rem;">
-          <label>Vyklízení / likvidace na místě
-            <small>Odvoz odpadu, výnos věcí k likvidaci</small>
-          </label>
-          <label class="toggle">
-            <input type="checkbox" id="clearance-unload">
             <span class="toggle-track"></span>
           </label>
         </div>
@@ -538,6 +547,15 @@
             </div>
           </div>
         </div>
+        <div class="field" style="margin-top:0.4rem;">
+          <label>Odvoz vozidla na skládku
+            <small>Cesta na skládku a zpět</small>
+          </label>
+          <label class="toggle">
+            <input type="checkbox" id="dump-transport">
+            <span class="toggle-track"></span>
+          </label>
+        </div>
       </div>
     </div>
 
@@ -585,13 +603,6 @@
           <input type="number" id="appliances" value="0" min="0" step="1"> ks
         </div>
         <div class="field" style="margin-top:0.5rem;">
-          <label>Převoz zákazníka</label>
-          <label class="toggle">
-            <input type="checkbox" id="person-transport">
-            <span class="toggle-track"></span>
-          </label>
-        </div>
-        <div class="field" style="margin-top:0.5rem;">
           <label>Práce den předem (dovoz krabic, balení)
             <small>Účtováno odděleně od hlavní zakázky</small>
           </label>
@@ -600,11 +611,18 @@
       </div>
     </div>
 
-    <!-- PŘÍPLATKY -->
+    <!-- OSTATNÍ -->
     <div class="card">
-      <div class="card-head">⚡ Příplatky</div>
+      <div class="card-head">⚡ Ostatní</div>
       <div class="section">
         <div class="field">
+          <label>Převoz zákazníka</label>
+          <label class="toggle">
+            <input type="checkbox" id="person-transport">
+            <span class="toggle-track"></span>
+          </label>
+        </div>
+        <div class="field" style="margin-top:0.4rem;">
           <label>Spěšnost
             <small>Zakázka do 24 hodin</small>
           </label>
@@ -622,6 +640,15 @@
             <span class="toggle-track"></span>
           </label>
         </div>
+        <div class="field" style="margin-top:0.4rem;">
+          <label>Sleva 10 %
+            <small>Zaklikni pouze pokud je málo zakázek a nemáme využití pro auto a lidi</small>
+          </label>
+          <label class="toggle">
+            <input type="checkbox" id="discount10">
+            <span class="toggle-track"></span>
+          </label>
+        </div>
       </div>
     </div>
 
@@ -636,6 +663,8 @@
         <div class="price" id="total-display">2 500 Kč</div>
         <div class="min-note" id="min-note" style="display:none">Aplikována minimální cena</div>
       </div>
+
+      <div class="customer-info" id="customer-info" style="display:none"></div>
 
       <div class="breakdown-list" id="breakdown">
         <div class="empty-state">Vyplňte parametry zakázky&hellip;</div>
@@ -662,7 +691,7 @@
 
 /* ── Sazebník ── */
 var R = {
-  hourBase:        1500,
+  hourBase:        1400,
   extraWorker:     200,
   kmRate:          20,
   kmFreeThreshold: 15,
@@ -681,17 +710,19 @@ var R = {
   boxPrice:        30,
   stretchPrice:    200,
   bubblePrice:     200,
-  assemblyHour:    500,
-  applianceConn:   200,
+  assemblyHour:    400,
+  applianceConn:   100,
   personTransport: 500,
-  dayBeforeHour:   800,
+  dayBeforeHour:   300,
   urgency:         500,
   customerHelps:  -500,
   pytlovaniSmall:  500,
   pytlovaniMedium: 1000,
   pytlovaniLarge:  1500,
   liquidation:     1000,
-  minimum:         2500,
+  dumpTransport:   3000,
+  discount10:      0.10,
+  minimum:         2000,
   profitRate:      0.35,
   partnerRate:     0.05,
 };
@@ -708,7 +739,7 @@ var S = {
   packingType: 'standard', boxes: 0, stretch: 0, bubble: 0,
   assemblyHours: 0, appliances: 0, personTransport: false,
   dayBefore: 0, urgency: false, customerHelps: false,
-  pytlovani: 'none', liquidation: false, clearanceLoad: false, clearanceUnload: false,
+  pytlovani: 'none', liquidation: false, dumpTransport: false, discount10: false,
 };
 
 /* ── Výpočet ── */
@@ -723,7 +754,7 @@ function calc() {
   }
 
   // Základní hodiny
-  add(S.hours + ' hod × 1 500 Kč (auto + 2 lidi)', S.hours * R.hourBase);
+  add(S.hours + ' hod × 1 400 Kč (auto + 2 lidi)', S.hours * R.hourBase);
 
   // Extra pracovníci
   if (S.workers > 2) {
@@ -793,12 +824,12 @@ function calc() {
 
   // Montáž
   if (S.assemblyHours > 0) {
-    add('Montáž/demontáž: ' + S.assemblyHours + ' hod × 750 Kč', S.assemblyHours * R.assemblyHour);
+    add('Montáž/demontáž: ' + S.assemblyHours + ' hod × 400 Kč', S.assemblyHours * R.assemblyHour);
   }
 
   // Spotřebiče
   if (S.appliances > 0) {
-    add(S.appliances + ' připoj. spotřebiče × 300 Kč', S.appliances * R.applianceConn);
+    add(S.appliances + ' připoj. spotřebiče × 100 Kč', S.appliances * R.applianceConn);
   }
 
   // Převoz osoby
@@ -806,7 +837,7 @@ function calc() {
 
   // Den předem
   if (S.dayBefore > 0) {
-    add('Práce den předem: ' + S.dayBefore + ' hod × 800 Kč', S.dayBefore * R.dayBeforeHour);
+    add('Práce den předem: ' + S.dayBefore + ' hod × 300 Kč', S.dayBefore * R.dayBeforeHour);
   }
 
   // Pytlování
@@ -817,11 +848,17 @@ function calc() {
   // Likvidace
   if (S.liquidation) add('Likvidace / odvoz odpadu', R.liquidation);
 
+  // Odvoz vozidla na skládku
+  if (S.dumpTransport) add('Odvoz vozidla na skládku', R.dumpTransport);
+
   // Spěšnost
   if (S.urgency) add('Sp\u011b\u0161nost (do 24 hod)', R.urgency);
 
   // Zákazník pomáhá
   if (S.customerHelps) add('Sleva – zákazník pomáhá', R.customerHelps);
+
+  // Sleva 10 % (nízké vytížení)
+  if (S.discount10) add('Sleva 10 % (nízké vytížení)', -Math.round(raw * R.discount10));
 
   var isMin = raw < R.minimum;
   var total = isMin ? R.minimum : raw;
@@ -841,6 +878,30 @@ function render() {
   document.getElementById('total-display').textContent = fmt(r.total);
   var minNote = document.getElementById('min-note');
   minNote.style.display = r.isMin ? 'inline-block' : 'none';
+
+  // Info o zákazníkovi
+  var name  = document.getElementById('customer-name').value.trim();
+  var date  = document.getElementById('move-date').value.trim();
+  var phone = document.getElementById('customer-phone').value.trim();
+  var from  = document.getElementById('move-from').value.trim();
+  var to    = document.getElementById('move-to').value.trim();
+
+  var ciRows = [];
+  if (name)  ciRows.push(['Zákazník:', name]);
+  if (date)  ciRows.push(['Datum:', date]);
+  if (phone) ciRows.push(['Telefon:', phone]);
+  if (from || to) ciRows.push(['Adresa:', (from || '?') + ' → ' + (to || '?')]);
+
+  var ciEl = document.getElementById('customer-info');
+  if (ciRows.length === 0) {
+    ciEl.style.display = 'none';
+    ciEl.innerHTML = '';
+  } else {
+    ciEl.style.display = 'block';
+    ciEl.innerHTML = ciRows.map(function(row) {
+      return '<div class="ci-row"><span class="ci-label">' + row[0] + '</span><span class="ci-value">' + row[1] + '</span></div>';
+    }).join('');
+  }
 
   var bd = document.getElementById('breakdown');
   if (r.items.length === 0) {
@@ -931,7 +992,7 @@ function resetForm() {
   });
 
   // Text
-  ['customer-name', 'move-date'].forEach(function(id) {
+  ['customer-name', 'move-date', 'customer-phone', 'move-from', 'move-to'].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.value = '';
   });
@@ -940,7 +1001,7 @@ function resetForm() {
   ['second-car','elevator-load','narrow-load','basement-load',
    'elevator-unload','narrow-unload','basement-unload','city-center','highway',
    'parking-issue','person-transport','urgency','customer-helps',
-   'clearance-load','clearance-unload','liquidation'].forEach(function(id) {
+   'liquidation','dump-transport','discount10'].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.checked = false;
   });
@@ -977,8 +1038,7 @@ function resetForm() {
     packingType: 'standard', boxes: 0, stretch: 0, bubble: 0,
     assemblyHours: 0, appliances: 0, personTransport: false,
     dayBefore: 0, urgency: false, customerHelps: false,
-    pytlovani: 'none', liquidation: false, clearanceLoad: false, clearanceUnload: false,
-  pytlovani: 'none', liquidation: false, clearanceLoad: false, clearanceUnload: false,
+    pytlovani: 'none', liquidation: false, dumpTransport: false, discount10: false,
   };
 
   render();
@@ -987,11 +1047,16 @@ function resetForm() {
 /* ── Kopírovat ── */
 function copyResult() {
   var r = calc();
-  var name = document.getElementById('customer-name').value.trim();
-  var date = document.getElementById('move-date').value.trim();
+  var name  = document.getElementById('customer-name').value.trim();
+  var date  = document.getElementById('move-date').value.trim();
+  var phone = document.getElementById('customer-phone').value.trim();
+  var from  = document.getElementById('move-from').value.trim();
+  var to    = document.getElementById('move-to').value.trim();
   var lines = ['KALKULACE ZAKÁZKY — Stěhování Jenda s.r.o.'];
-  if (name) lines.push('Zákazník: ' + name);
-  if (date) lines.push('Datum: ' + date);
+  if (name)  lines.push('Zákazník: ' + name);
+  if (date)  lines.push('Datum: ' + date);
+  if (phone) lines.push('Telefon: ' + phone);
+  if (from || to) lines.push('Adresa: ' + (from || '?') + ' → ' + (to || '?'));
   lines.push('');
   r.items.forEach(function(it) {
     lines.push(it.name + ':  ' + Math.round(it.amount).toLocaleString('cs-CZ') + ' Kč');
@@ -1010,6 +1075,12 @@ function copyResult() {
 
 /* ── Tisk ── */
 function printResult() { window.print(); }
+
+/* ── Text inputs (info) ── */
+['customer-name', 'move-date', 'customer-phone', 'move-from', 'move-to'].forEach(function(id) {
+  var el = document.getElementById(id);
+  if (el) el.addEventListener('input', render);
+});
 
 /* ── Init ── */
 initChips('workers-chips',      'workers');
@@ -1044,9 +1115,9 @@ initToggle('urgency',          'urgency');
 initToggle('customer-helps',   'customerHelps');
 
 initSelect('packing-type', 'packingType', 'sub-packing');
-initToggle('clearance-load',   'clearanceLoad');
-initToggle('clearance-unload', 'clearanceUnload');
 initToggle('liquidation',      'liquidation', 'sub-liquidation');
+initToggle('dump-transport',   'dumpTransport');
+initToggle('discount10',       'discount10');
 initChips('pytlovani-chips',   'pytlovani');
 
 render();
