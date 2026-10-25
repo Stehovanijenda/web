@@ -1101,20 +1101,6 @@ function floorLabel(v) {
   return v + '. patro';
 }
 
-function pytlovaniLabel(v) {
-  if (v === 'small')  return 'Malé (+500 Kč)';
-  if (v === 'medium') return 'Střední (+1 000 Kč)';
-  if (v === 'large')  return 'Velké (+1 500 Kč)';
-  return 'Žádné';
-}
-
-function packingLabel(v) {
-  if (v === 'small')    return 'Malé balení (300 Kč)';
-  if (v === 'standard') return 'Standard paušál (500 Kč)';
-  if (v === 'custom')   return 'Vlastní rozpis';
-  return 'Žádný';
-}
-
 /* ── Kopírovat ── */
 function copyResult() {
   var r = calc();
@@ -1127,91 +1113,20 @@ function copyResult() {
 
   var lines = ['KALKULACE ZAKÁZKY — Stěhování Jenda s.r.o.', ''];
 
-  // Zákazník a zakázka
-  lines.push('ZÁKAZNÍK A ZAKÁZKA');
-  lines.push('Jméno zákazníka: ' + (name || '—'));
-  lines.push('Datum stěhování: ' + (date || '—'));
-  lines.push('Telefon: ' + (phone || '—'));
-  lines.push('Odkud: ' + (from || '—'));
-  lines.push('Kam: ' + (to || '—'));
-  lines.push('');
+  // Zákazník a zakázka — jen vyplněné
+  if (name)  lines.push('Zákazník: ' + name);
+  if (date)  lines.push('Datum: ' + date);
+  if (phone) lines.push('Telefon: ' + phone);
+  if (from || to) lines.push('Adresa: ' + (from || '?') + ' → ' + (to || '?'));
+  if (name || date || phone || from || to) lines.push('');
 
-  // Základní parametry
-  lines.push('ZÁKLADNÍ PARAMETRY');
-  lines.push('Odhadovaná doba práce: ' + S.hours + ' hod');
-  lines.push('Počet pracovníků: ' + S.workers);
-  lines.push('');
-
-  // Trasa
-  lines.push('TRASA');
-  lines.push('Celková trasa: ' + S.distance + ' km');
-  lines.push('Druhé menší auto: ' + ynLabel(S.secondCar) + (S.secondCar ? ' (' + S.secondCarKm + ' km jednosměrně)' : ''));
-  lines.push('Vjezd do centra: ' + ynLabel(S.cityCenter));
-  lines.push('Dálnice: ' + ynLabel(S.highway));
-  lines.push('');
-
-  // Nakládka
-  lines.push('NAKLÁDKA');
-  lines.push('Patro: ' + floorLabel(S.floorLoad));
-  lines.push('Výtah: ' + ynLabel(S.elevatorLoad));
-  lines.push('Úzké schodiště/chodba: ' + ynLabel(S.narrowLoad));
-  lines.push('Sklep/garáž navíc: ' + ynLabel(S.basementLoad));
-  lines.push('');
-
-  // Vykládka
-  lines.push('VYKLÁDKA');
-  lines.push('Patro: ' + floorLabel(S.floorUnload));
-  lines.push('Výtah: ' + ynLabel(S.elevatorUnload));
-  lines.push('Úzké schodiště/chodba: ' + ynLabel(S.narrowUnload));
-  lines.push('Sklep/garáž navíc: ' + ynLabel(S.basementUnload));
-  lines.push('Extra zastávky vykládky: ' + S.extraStops);
-  lines.push('');
-
-  // Věci a komplikace
-  lines.push('VĚCI A KOMPLIKACE');
-  lines.push('Těžké předměty: ' + S.heavyItems + ' ks (× 200 Kč)');
-  lines.push('Křehké/historické předměty: ' + S.fragileItems + ' ks (× 100 Kč)');
-  lines.push('Komplikace s parkováním: ' + ynLabel(S.parkingIssue));
-  lines.push('');
-
-  // Vyklízení & likvidace
-  lines.push('VYKLÍZENÍ & LIKVIDACE');
-  lines.push('Likvidace/odvoz odpadu: ' + ynLabel(S.liquidation));
-  if (S.liquidation) lines.push('Pytlování: ' + pytlovaniLabel(S.pytlovani));
-  lines.push('Odvoz vozidla na skládku: ' + ynLabel(S.dumpTransport));
-  lines.push('');
-
-  // Balicí materiál
-  lines.push('BALICÍ MATERIÁL');
-  lines.push('Způsob účtování: ' + packingLabel(S.packingType));
-  if (S.packingType === 'custom') {
-    lines.push('Krabice: ' + S.boxes + ' ks');
-    lines.push('Strečková fólie: ' + S.stretch + ' role');
-    lines.push('Bublinková fólie: ' + S.bubble + ' role');
-  }
-  lines.push('');
-
-  // Doplňkové služby
-  lines.push('DOPLŇKOVÉ SLUŽBY');
-  lines.push('Montáž/demontáž nábytku: ' + S.assemblyHours + ' hod');
-  lines.push('Připojení/odpojení spotřebičů: ' + S.appliances + ' ks');
-  lines.push('Práce den předem: ' + S.dayBefore + ' hod');
-  lines.push('');
-
-  // Ostatní
-  lines.push('OSTATNÍ');
-  lines.push('Převoz zákazníka: ' + ynLabel(S.personTransport));
-  lines.push('Spěšnost (do 24 hod): ' + ynLabel(S.urgency));
-  lines.push('Zákazník pomáhá sám: ' + ynLabel(S.customerHelps));
-  lines.push('Sleva 10 % (nízké vytížení): ' + ynLabel(S.discount10));
-  lines.push('');
-
-  // Rozpis ceny
+  // Rozpis ceny — jen skutečně zpoplatněné položky
   lines.push('ROZPIS CENY');
-  if (r.items.length === 0) {
+  var pricedItems = r.items.filter(function(it) { return it.amount !== 0; });
+  if (pricedItems.length === 0) {
     lines.push('(žádné zpoplatněné položky)');
   } else {
-    r.items.forEach(function(it) {
+    pricedItems.forEach(function(it) {
       lines.push(it.name + ':  ' + Math.round(it.amount).toLocaleString('cs-CZ') + ' Kč');
     });
   }
@@ -1219,10 +1134,11 @@ function copyResult() {
   lines.push('CELKEM: ' + Math.round(r.total).toLocaleString('cs-CZ') + ' Kč');
   if (r.isMin) lines.push('(Minimální cena zakázky)');
 
-  // Poznámky
-  lines.push('');
-  lines.push('POZNÁMKY');
-  lines.push(notes || '—');
+  // Poznámky — jen pokud jsou vyplněné
+  if (notes) {
+    lines.push('');
+    lines.push('Poznámky: ' + notes);
+  }
 
   navigator.clipboard.writeText(lines.join('\n')).then(function() {
     var btn = event.target;
