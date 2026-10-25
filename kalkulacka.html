@@ -139,6 +139,19 @@
     }
     input[type="text"]:focus { outline: none; border-color: var(--orange); background: #fff; }
 
+    textarea {
+      width: 100%;
+      padding: 0.5rem 0.6rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-family: inherit;
+      background: #fafafa;
+      resize: vertical;
+      transition: border-color 0.15s;
+    }
+    textarea:focus { outline: none; border-color: var(--orange); background: #fff; }
+
     /* ── RADIO CHIPS ── */
     .chips { display: flex; gap: 0.35rem; flex-wrap: wrap; }
     .chip {
@@ -417,7 +430,10 @@
             <span class="chip" data-v="2">2.</span>
             <span class="chip" data-v="3">3.</span>
             <span class="chip" data-v="4">4.</span>
-            <span class="chip" data-v="5">5.+</span>
+            <span class="chip" data-v="5">5.</span>
+            <span class="chip" data-v="6">6.</span>
+            <span class="chip" data-v="7">7.+</span>
+            <span class="chip" data-v="house">Dům</span>
           </div>
         </div>
         <div class="field" style="margin-top:0.5rem;">
@@ -457,7 +473,10 @@
             <span class="chip" data-v="2">2.</span>
             <span class="chip" data-v="3">3.</span>
             <span class="chip" data-v="4">4.</span>
-            <span class="chip" data-v="5">5.+</span>
+            <span class="chip" data-v="5">5.</span>
+            <span class="chip" data-v="6">6.</span>
+            <span class="chip" data-v="7">7.+</span>
+            <span class="chip" data-v="house">Dům</span>
           </div>
         </div>
         <div class="field" style="margin-top:0.5rem;">
@@ -567,6 +586,7 @@
           <label>Způsob účtování</label>
           <select id="packing-type">
             <option value="none">Žádný</option>
+            <option value="small">Malé balení (300 Kč)</option>
             <option value="standard" selected>Standard paušál (500 Kč)</option>
             <option value="custom">Vlastní rozpis</option>
           </select>
@@ -577,11 +597,11 @@
             <input type="number" id="boxes" value="0" min="0"> ks
           </div>
           <div class="field">
-            <label>Strečková fólie (role × 200 Kč)</label>
+            <label>Strečková fólie (role × 250 Kč)</label>
             <input type="number" id="stretch" value="0" min="0"> rol
           </div>
           <div class="field">
-            <label>Bublinková fólie (role × 200 Kč)</label>
+            <label>Bublinková fólie (role × 250 Kč)</label>
             <input type="number" id="bubble" value="0" min="0"> rol
           </div>
         </div>
@@ -652,6 +672,16 @@
       </div>
     </div>
 
+    <!-- POZNÁMKY -->
+    <div class="card">
+      <div class="card-head">📝 Poznámky</div>
+      <div class="section">
+        <div class="field" style="align-items:flex-start;">
+          <textarea id="notes" placeholder="Sem napiš cokoliv navíc – co se stěhuje, speciální přání klienta, na čem jsme se domluvili navíc…" rows="4"></textarea>
+        </div>
+      </div>
+    </div>
+
   </div><!-- /form-col -->
 
   <!-- ══════════ RESULT COLUMN ══════════ -->
@@ -699,6 +729,7 @@ var R = {
   floorRate:       500,
   elevatedGround:  300,
   basement:        300,
+  house:           300,
   narrowPassage:   400,
   extraStop:       500,
   parkingIssue:    300,
@@ -706,10 +737,11 @@ var R = {
   fragileItem:     100,
   cityCenter:      800,
   highway:         500,
+  packingSmall:    300,
   packingStd:      500,
   boxPrice:        30,
-  stretchPrice:    200,
-  bubblePrice:     200,
+  stretchPrice:    250,
+  bubblePrice:     250,
   assemblyHour:    400,
   applianceConn:   100,
   personTransport: 500,
@@ -747,8 +779,8 @@ function calc() {
   var items = [];
   var raw   = 0;
 
-  function add(name, amount) {
-    if (amount === 0) return;
+  function add(name, amount, force) {
+    if (amount === 0 && !force) return;
     items.push({ name: name, amount: amount });
     raw += amount;
   }
@@ -781,24 +813,32 @@ function calc() {
   // Dálnice
   if (S.highway) add('Dálniční příplatek', R.highway);
 
-  // Patra – nakládka
-  if (!S.elevatorLoad) {
-    if (S.floorLoad === 0.5) {
-      add('Nákl. – zvýšené přîzemí (bez výtahu)', R.elevatedGround);
-    } else if (S.floorLoad >= 2) {
-      add('Nákl. – ' + S.floorLoad + '. patro bez výtahu (' + (S.floorLoad - 1) + '×500 Kč)', (S.floorLoad - 1) * R.floorRate);
-    }
+  // Patra – nakládka (vždy zobrazit, co je vybráno, i bez příplatku)
+  if (S.floorLoad === 'house') {
+    add('Nákl. – dům (rodinný dům)', R.house, true);
+  } else if (S.elevatorLoad) {
+    add('Nákl. – ' + floorLabel(S.floorLoad) + ' (výtah, bez příplatku)', 0, true);
+  } else if (S.floorLoad === 0.5) {
+    add('Nákl. – zvýšené přízemí (bez výtahu)', R.elevatedGround, true);
+  } else if (S.floorLoad >= 2) {
+    add('Nákl. – ' + floorLabel(S.floorLoad) + ' bez výtahu (' + (S.floorLoad - 1) + '×500 Kč)', (S.floorLoad - 1) * R.floorRate, true);
+  } else {
+    add('Nákl. – ' + floorLabel(S.floorLoad) + ' (bez příplatku)', 0, true);
   }
   if (S.narrowLoad)    add('Nákl. – úzké schodiště/chodba', R.narrowPassage);
   if (S.basementLoad)  add('Nákl. – sklep / garáž', R.basement);
 
-  // Patra – vykládka
-  if (!S.elevatorUnload) {
-    if (S.floorUnload === 0.5) {
-      add('Vykl. – zvýšené přîzemí (bez výtahu)', R.elevatedGround);
-    } else if (S.floorUnload >= 2) {
-      add('Vykl. – ' + S.floorUnload + '. patro bez výtahu (' + (S.floorUnload - 1) + '×500 Kč)', (S.floorUnload - 1) * R.floorRate);
-    }
+  // Patra – vykládka (vždy zobrazit, co je vybráno, i bez příplatku)
+  if (S.floorUnload === 'house') {
+    add('Vykl. – dům (rodinný dům)', R.house, true);
+  } else if (S.elevatorUnload) {
+    add('Vykl. – ' + floorLabel(S.floorUnload) + ' (výtah, bez příplatku)', 0, true);
+  } else if (S.floorUnload === 0.5) {
+    add('Vykl. – zvýšené přízemí (bez výtahu)', R.elevatedGround, true);
+  } else if (S.floorUnload >= 2) {
+    add('Vykl. – ' + floorLabel(S.floorUnload) + ' bez výtahu (' + (S.floorUnload - 1) + '×500 Kč)', (S.floorUnload - 1) * R.floorRate, true);
+  } else {
+    add('Vykl. – ' + floorLabel(S.floorUnload) + ' (bez příplatku)', 0, true);
   }
   if (S.narrowUnload)    add('Vykl. – úzké schodiště/chodba', R.narrowPassage);
   if (S.basementUnload)  add('Vykl. – sklep / garáž', R.basement);
@@ -809,17 +849,19 @@ function calc() {
   }
 
   // Věci
-  if (S.heavyItems > 0)   add(S.heavyItems + ' těžký/é předmět(y) × 400 Kč', S.heavyItems * R.heavyItem);
-  if (S.fragileItems > 0) add(S.fragileItems + ' křehký/é předmět(y) × 300 Kč', S.fragileItems * R.fragileItem);
+  if (S.heavyItems > 0)   add(S.heavyItems + ' těžký/é předmět(y) × 200 Kč', S.heavyItems * R.heavyItem);
+  if (S.fragileItems > 0) add(S.fragileItems + ' křehký/é předmět(y) × 100 Kč', S.fragileItems * R.fragileItem);
   if (S.parkingIssue)     add('Komplikace s parkováním', R.parkingIssue);
 
   // Balicí materiál
-  if (S.packingType === 'standard') {
+  if (S.packingType === 'small') {
+    add('Balicí materiál (malé balení)', R.packingSmall);
+  } else if (S.packingType === 'standard') {
     add('Balicí materiál (standard)', R.packingStd);
   } else if (S.packingType === 'custom') {
     if (S.boxes > 0)   add(S.boxes + ' krabic × 30 Kč', S.boxes * R.boxPrice);
-    if (S.stretch > 0) add(S.stretch + ' role strečky × 200 Kč', S.stretch * R.stretchPrice);
-    if (S.bubble > 0)  add(S.bubble + ' role bublinky × 200 Kč', S.bubble * R.bubblePrice);
+    if (S.stretch > 0) add(S.stretch + ' role strečky × 250 Kč', S.stretch * R.stretchPrice);
+    if (S.bubble > 0)  add(S.bubble + ' role bublinky × 250 Kč', S.bubble * R.bubblePrice);
   }
 
   // Montáž
@@ -885,12 +927,14 @@ function render() {
   var phone = document.getElementById('customer-phone').value.trim();
   var from  = document.getElementById('move-from').value.trim();
   var to    = document.getElementById('move-to').value.trim();
+  var notes = document.getElementById('notes').value.trim();
 
   var ciRows = [];
   if (name)  ciRows.push(['Zákazník:', name]);
   if (date)  ciRows.push(['Datum:', date]);
   if (phone) ciRows.push(['Telefon:', phone]);
   if (from || to) ciRows.push(['Adresa:', (from || '?') + ' → ' + (to || '?')]);
+  if (notes) ciRows.push(['Poznámky:', notes]);
 
   var ciEl = document.getElementById('customer-info');
   if (ciRows.length === 0) {
@@ -934,7 +978,9 @@ function initChips(id, key) {
     if (!c) return;
     g.querySelectorAll('.chip').forEach(function(x) { x.classList.remove('on'); });
     c.classList.add('on');
-    S[key] = parseFloat(c.getAttribute('data-v'));
+    var v = c.getAttribute('data-v');
+    var n = parseFloat(v);
+    S[key] = isNaN(n) ? v : n;
     render();
   });
 }
@@ -992,7 +1038,7 @@ function resetForm() {
   });
 
   // Text
-  ['customer-name', 'move-date', 'customer-phone', 'move-from', 'move-to'].forEach(function(id) {
+  ['customer-name', 'move-date', 'customer-phone', 'move-from', 'move-to', 'notes'].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.value = '';
   });
@@ -1044,6 +1090,31 @@ function resetForm() {
   render();
 }
 
+/* ── Pomocné popisky pro export ── */
+function ynLabel(b) { return b ? 'ano' : 'ne'; }
+
+function floorLabel(v) {
+  if (v === 'house') return 'Dům (rodinný dům)';
+  if (v === 0)   return 'Přízemí';
+  if (v === 0.5) return 'Zvýšené přízemí';
+  if (v === 7)   return '7.+ patro';
+  return v + '. patro';
+}
+
+function pytlovaniLabel(v) {
+  if (v === 'small')  return 'Malé (+500 Kč)';
+  if (v === 'medium') return 'Střední (+1 000 Kč)';
+  if (v === 'large')  return 'Velké (+1 500 Kč)';
+  return 'Žádné';
+}
+
+function packingLabel(v) {
+  if (v === 'small')    return 'Malé balení (300 Kč)';
+  if (v === 'standard') return 'Standard paušál (500 Kč)';
+  if (v === 'custom')   return 'Vlastní rozpis';
+  return 'Žádný';
+}
+
 /* ── Kopírovat ── */
 function copyResult() {
   var r = calc();
@@ -1052,18 +1123,106 @@ function copyResult() {
   var phone = document.getElementById('customer-phone').value.trim();
   var from  = document.getElementById('move-from').value.trim();
   var to    = document.getElementById('move-to').value.trim();
-  var lines = ['KALKULACE ZAKÁZKY — Stěhování Jenda s.r.o.'];
-  if (name)  lines.push('Zákazník: ' + name);
-  if (date)  lines.push('Datum: ' + date);
-  if (phone) lines.push('Telefon: ' + phone);
-  if (from || to) lines.push('Adresa: ' + (from || '?') + ' → ' + (to || '?'));
+  var notes = document.getElementById('notes').value.trim();
+
+  var lines = ['KALKULACE ZAKÁZKY — Stěhování Jenda s.r.o.', ''];
+
+  // Zákazník a zakázka
+  lines.push('ZÁKAZNÍK A ZAKÁZKA');
+  lines.push('Jméno zákazníka: ' + (name || '—'));
+  lines.push('Datum stěhování: ' + (date || '—'));
+  lines.push('Telefon: ' + (phone || '—'));
+  lines.push('Odkud: ' + (from || '—'));
+  lines.push('Kam: ' + (to || '—'));
   lines.push('');
-  r.items.forEach(function(it) {
-    lines.push(it.name + ':  ' + Math.round(it.amount).toLocaleString('cs-CZ') + ' Kč');
-  });
+
+  // Základní parametry
+  lines.push('ZÁKLADNÍ PARAMETRY');
+  lines.push('Odhadovaná doba práce: ' + S.hours + ' hod');
+  lines.push('Počet pracovníků: ' + S.workers);
+  lines.push('');
+
+  // Trasa
+  lines.push('TRASA');
+  lines.push('Celková trasa: ' + S.distance + ' km');
+  lines.push('Druhé menší auto: ' + ynLabel(S.secondCar) + (S.secondCar ? ' (' + S.secondCarKm + ' km jednosměrně)' : ''));
+  lines.push('Vjezd do centra: ' + ynLabel(S.cityCenter));
+  lines.push('Dálnice: ' + ynLabel(S.highway));
+  lines.push('');
+
+  // Nakládka
+  lines.push('NAKLÁDKA');
+  lines.push('Patro: ' + floorLabel(S.floorLoad));
+  lines.push('Výtah: ' + ynLabel(S.elevatorLoad));
+  lines.push('Úzké schodiště/chodba: ' + ynLabel(S.narrowLoad));
+  lines.push('Sklep/garáž navíc: ' + ynLabel(S.basementLoad));
+  lines.push('');
+
+  // Vykládka
+  lines.push('VYKLÁDKA');
+  lines.push('Patro: ' + floorLabel(S.floorUnload));
+  lines.push('Výtah: ' + ynLabel(S.elevatorUnload));
+  lines.push('Úzké schodiště/chodba: ' + ynLabel(S.narrowUnload));
+  lines.push('Sklep/garáž navíc: ' + ynLabel(S.basementUnload));
+  lines.push('Extra zastávky vykládky: ' + S.extraStops);
+  lines.push('');
+
+  // Věci a komplikace
+  lines.push('VĚCI A KOMPLIKACE');
+  lines.push('Těžké předměty: ' + S.heavyItems + ' ks (× 200 Kč)');
+  lines.push('Křehké/historické předměty: ' + S.fragileItems + ' ks (× 100 Kč)');
+  lines.push('Komplikace s parkováním: ' + ynLabel(S.parkingIssue));
+  lines.push('');
+
+  // Vyklízení & likvidace
+  lines.push('VYKLÍZENÍ & LIKVIDACE');
+  lines.push('Likvidace/odvoz odpadu: ' + ynLabel(S.liquidation));
+  if (S.liquidation) lines.push('Pytlování: ' + pytlovaniLabel(S.pytlovani));
+  lines.push('Odvoz vozidla na skládku: ' + ynLabel(S.dumpTransport));
+  lines.push('');
+
+  // Balicí materiál
+  lines.push('BALICÍ MATERIÁL');
+  lines.push('Způsob účtování: ' + packingLabel(S.packingType));
+  if (S.packingType === 'custom') {
+    lines.push('Krabice: ' + S.boxes + ' ks');
+    lines.push('Strečková fólie: ' + S.stretch + ' role');
+    lines.push('Bublinková fólie: ' + S.bubble + ' role');
+  }
+  lines.push('');
+
+  // Doplňkové služby
+  lines.push('DOPLŇKOVÉ SLUŽBY');
+  lines.push('Montáž/demontáž nábytku: ' + S.assemblyHours + ' hod');
+  lines.push('Připojení/odpojení spotřebičů: ' + S.appliances + ' ks');
+  lines.push('Práce den předem: ' + S.dayBefore + ' hod');
+  lines.push('');
+
+  // Ostatní
+  lines.push('OSTATNÍ');
+  lines.push('Převoz zákazníka: ' + ynLabel(S.personTransport));
+  lines.push('Spěšnost (do 24 hod): ' + ynLabel(S.urgency));
+  lines.push('Zákazník pomáhá sám: ' + ynLabel(S.customerHelps));
+  lines.push('Sleva 10 % (nízké vytížení): ' + ynLabel(S.discount10));
+  lines.push('');
+
+  // Rozpis ceny
+  lines.push('ROZPIS CENY');
+  if (r.items.length === 0) {
+    lines.push('(žádné zpoplatněné položky)');
+  } else {
+    r.items.forEach(function(it) {
+      lines.push(it.name + ':  ' + Math.round(it.amount).toLocaleString('cs-CZ') + ' Kč');
+    });
+  }
   lines.push('');
   lines.push('CELKEM: ' + Math.round(r.total).toLocaleString('cs-CZ') + ' Kč');
   if (r.isMin) lines.push('(Minimální cena zakázky)');
+
+  // Poznámky
+  lines.push('');
+  lines.push('POZNÁMKY');
+  lines.push(notes || '—');
 
   navigator.clipboard.writeText(lines.join('\n')).then(function() {
     var btn = event.target;
@@ -1077,7 +1236,7 @@ function copyResult() {
 function printResult() { window.print(); }
 
 /* ── Text inputs (info) ── */
-['customer-name', 'move-date', 'customer-phone', 'move-from', 'move-to'].forEach(function(id) {
+['customer-name', 'move-date', 'customer-phone', 'move-from', 'move-to', 'notes'].forEach(function(id) {
   var el = document.getElementById(id);
   if (el) el.addEventListener('input', render);
 });
