@@ -46,6 +46,95 @@
     header h1 span { color: var(--orange); }
     header .subtitle { font-size: 0.75rem; color: #aaa; margin-top: 0.1rem; }
 
+    .btn-history {
+      background: transparent;
+      border: 1.5px solid rgba(255,255,255,.3);
+      color: #fff;
+      padding: 0.4rem 0.8rem;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-history:hover { border-color: var(--orange); color: var(--orange); }
+    .btn-history #history-count {
+      display: inline-block;
+      background: var(--orange);
+      color: #fff;
+      border-radius: 10px;
+      padding: 0 0.4rem;
+      font-size: 0.7rem;
+      margin-left: 0.3rem;
+    }
+    .btn-history #history-count:empty { display: none; }
+
+    /* ── HISTORIE MODAL ── */
+    .modal-overlay[hidden] { display: none; }
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.5);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 100;
+      padding: 1rem;
+    }
+    .modal {
+      background: var(--card);
+      border-radius: 10px;
+      width: 100%;
+      max-width: 560px;
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .modal-head {
+      background: var(--dark);
+      color: #fff;
+      padding: 0.8rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+    .modal-close {
+      background: none; border: none; color: #fff;
+      font-size: 1rem; cursor: pointer; opacity: 0.7;
+    }
+    .modal-close:hover { opacity: 1; }
+    .modal-body {
+      overflow-y: auto;
+      padding: 0.5rem;
+      flex: 1;
+    }
+    .modal-foot {
+      display: flex; gap: 0.5rem;
+      padding: 0.75rem 1rem;
+      border-top: 1px solid var(--border);
+    }
+    .hist-item {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.6rem 0.8rem;
+      margin-bottom: 0.5rem;
+      font-size: 0.8rem;
+    }
+    .hist-item:last-child { margin-bottom: 0; }
+    .hist-item .hi-top {
+      display: flex; justify-content: space-between; align-items: baseline;
+      margin-bottom: 0.25rem;
+    }
+    .hist-item .hi-name { font-weight: 700; color: var(--text); }
+    .hist-item .hi-price { font-weight: 800; color: var(--orange); white-space: nowrap; }
+    .hist-item .hi-meta { color: var(--muted); font-size: 0.74rem; margin-bottom: 0.4rem; }
+    .hist-item .hi-actions { display: flex; gap: 0.4rem; }
+    .hist-item .hi-actions button {
+      flex: 1; padding: 0.35rem; border: none; border-radius: 5px;
+      font-size: 0.74rem; font-weight: 700; cursor: pointer;
+    }
+    .hist-empty { text-align: center; color: var(--muted); padding: 2rem 1rem; font-size: 0.85rem; }
+
     /* ── LAYOUT ── */
     .layout {
       display: grid;
@@ -301,6 +390,8 @@
     .btn-gray:hover { background: #d5d5d8; }
     .btn-dark { background: var(--dark); color: #fff; }
     .btn-dark:hover { opacity: 0.85; }
+    .btn-green { background: var(--green); color: #fff; }
+    .btn-green:hover { opacity: 0.88; }
 
     /* ── PRINT ── */
     @media print {
@@ -321,7 +412,23 @@
     <h1>Kalkulačka zakázek &mdash; <span>Stěhování Jenda s.r.o.</span></h1>
     <div class="subtitle">Interní nástroj pro nacenění</div>
   </div>
+  <button class="btn-history" onclick="openHistory()">🕑 Historie <span id="history-count"></span></button>
 </header>
+
+<!-- ══════════ HISTORIE MODAL ══════════ -->
+<div class="modal-overlay" id="history-overlay" hidden>
+  <div class="modal">
+    <div class="modal-head">
+      <span>🕑 Historie nabídek</span>
+      <button class="modal-close" onclick="closeHistory()">✕</button>
+    </div>
+    <div class="modal-body" id="history-list"></div>
+    <div class="modal-foot">
+      <button class="btn btn-gray" onclick="clearHistory()">Vymazat historii</button>
+      <button class="btn btn-dark" onclick="closeHistory()">Zavřít</button>
+    </div>
+  </div>
+</div>
 
 <div class="layout">
 
@@ -705,6 +812,10 @@
         <div class="pv" id="profit-display">—</div>
       </div>
 
+      <div class="actions actions-client">
+        <button class="btn btn-green" onclick="copyClientOffer()">📋 Nabídka pro klienta</button>
+      </div>
+
       <div class="actions">
         <button class="btn btn-gray" onclick="resetForm()">Vymazat</button>
         <button class="btn btn-dark" onclick="printResult()">Tisk</button>
@@ -773,6 +884,9 @@ var S = {
   dayBefore: 0, urgency: false, customerHelps: false,
   pytlovani: 'none', liquidation: false, dumpTransport: false, discount10: false,
 };
+
+/* ── Historie nabídek (localStorage) ── */
+var HISTORY_KEY = 'jendaKalkulackaHistorie_v1';
 
 /* ── Výpočet ── */
 function calc() {
@@ -1140,6 +1254,51 @@ function copyResult() {
     lines.push('Poznámky: ' + notes);
   }
 
+  saveToHistory();
+
+  navigator.clipboard.writeText(lines.join('\n')).then(function() {
+    var btn = event.target;
+    var orig = btn.textContent;
+    btn.textContent = 'Zkopírováno!';
+    setTimeout(function() { btn.textContent = orig; }, 2000);
+  });
+}
+
+/* ── Nabídka pro klienta ── */
+function copyClientOffer() {
+  var r = calc();
+  var name = document.getElementById('customer-name').value.trim();
+  var date = document.getElementById('move-date').value.trim();
+
+  var low  = Math.max(0, Math.round(r.total - 500));
+  var high = Math.round(r.total + 500);
+
+  var greeting = name
+    ? ('Dobrý den, pane / paní ' + name + ', děkujeme za zájem o naše služby.')
+    : 'Dobrý den, děkujeme za zájem o naše služby.';
+  var datePart = date ? ('Termín stěhování: ' + date + '.') : '';
+
+  var lines = [
+    greeting,
+    ''
+  ];
+  if (datePart) { lines.push(datePart); lines.push(''); }
+  lines.push(
+    'Vzhledem k obdrženým informacím se cena za stěhování pohybuje v rozmezí od ' + fmt(low) + ' do ' + fmt(high) + '.',
+    '',
+    'V případě zájmu Vás poprosíme o potvrzení termínu a stanovení konkrétního času příjezdu našich stěhováků.',
+    '',
+    'Rádi bychom zdůraznili, že dbáme na profesionální přístup nás i našich pracovníků. Naši cenu po potvrzení nezvyšujeme, nábytek zabalíme a jsme pojištěni proti poškození majetku. Zároveň víme, že stěhování je velká věc, a proto dbáme na Vaši bezstarostnost během celé realizace.',
+    '',
+    'V případě zájmu nebo dotazů nás neváhejte kontaktovat.',
+    '',
+    'Těšíme se na případnou spolupráci,',
+    'S pozdravem,',
+    'Stěhování Jenda s.r.o.'
+  );
+
+  saveToHistory();
+
   navigator.clipboard.writeText(lines.join('\n')).then(function() {
     var btn = event.target;
     var orig = btn.textContent;
@@ -1194,6 +1353,180 @@ initToggle('liquidation',      'liquidation', 'sub-liquidation');
 initToggle('dump-transport',   'dumpTransport');
 initToggle('discount10',       'discount10');
 initChips('pytlovani-chips',   'pytlovani');
+
+/* ── Historie nabídek ── */
+function loadHistoryList() {
+  try {
+    var raw = localStorage.getItem(HISTORY_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveHistoryList(list) {
+  try {
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(list));
+  } catch (e) { /* localStorage nedostupné — tiše ignorovat */ }
+}
+
+function saveToHistory() {
+  var r = calc();
+  var record = {
+    id: Date.now() + '-' + Math.random().toString(36).slice(2, 7),
+    savedAt: new Date().toLocaleString('cs-CZ'),
+    name:  document.getElementById('customer-name').value.trim(),
+    date:  document.getElementById('move-date').value.trim(),
+    phone: document.getElementById('customer-phone').value.trim(),
+    from:  document.getElementById('move-from').value.trim(),
+    to:    document.getElementById('move-to').value.trim(),
+    notes: document.getElementById('notes').value.trim(),
+    total: r.total,
+    isMin: r.isMin,
+    state: JSON.parse(JSON.stringify(S))
+  };
+  var list = loadHistoryList();
+  list.unshift(record);
+  if (list.length > 200) list = list.slice(0, 200);
+  saveHistoryList(list);
+  updateHistoryCount();
+}
+
+function updateHistoryCount() {
+  var el = document.getElementById('history-count');
+  if (!el) return;
+  var n = loadHistoryList().length;
+  el.textContent = n > 0 ? n : '';
+}
+
+function renderHistoryPanel() {
+  var list = loadHistoryList();
+  var wrap = document.getElementById('history-list');
+  if (!wrap) return;
+  if (list.length === 0) {
+    wrap.innerHTML = '<div class="hist-empty">Zatím žádná uložená nabídka. Historie se ukládá automaticky při kliknutí na „Kopírovat“ nebo „Nabídka pro klienta“.</div>';
+    return;
+  }
+  wrap.innerHTML = list.map(function(rec) {
+    var addr = (rec.from || rec.to) ? ((rec.from || '?') + ' → ' + (rec.to || '?')) : '';
+    return '' +
+      '<div class="hist-item">' +
+        '<div class="hi-top">' +
+          '<span class="hi-name">' + (rec.name || 'Bez jména') + '</span>' +
+          '<span class="hi-price">' + fmt(rec.total) + '</span>' +
+        '</div>' +
+        '<div class="hi-meta">' +
+          (rec.date ? 'Termín: ' + rec.date + ' &nbsp;·&nbsp; ' : '') +
+          (rec.phone ? 'Tel: ' + rec.phone + ' &nbsp;·&nbsp; ' : '') +
+          (addr ? addr + ' &nbsp;·&nbsp; ' : '') +
+          'Uloženo: ' + rec.savedAt +
+        '</div>' +
+        '<div class="hi-actions">' +
+          '<button class="btn-orange" style="background:var(--orange);color:#fff;" onclick="loadFromHistory(\'' + rec.id + '\')">Načíst</button>' +
+          '<button class="btn-gray" style="background:var(--border);color:var(--text);" onclick="deleteHistoryEntry(\'' + rec.id + '\')">Smazat</button>' +
+        '</div>' +
+      '</div>';
+  }).join('');
+}
+
+function openHistory() {
+  renderHistoryPanel();
+  document.getElementById('history-overlay').hidden = false;
+}
+
+function closeHistory() {
+  document.getElementById('history-overlay').hidden = true;
+}
+
+function deleteHistoryEntry(id) {
+  var list = loadHistoryList().filter(function(rec) { return rec.id !== id; });
+  saveHistoryList(list);
+  renderHistoryPanel();
+  updateHistoryCount();
+}
+
+function clearHistory() {
+  if (!confirm('Opravdu vymazat celou historii nabídek?')) return;
+  saveHistoryList([]);
+  renderHistoryPanel();
+  updateHistoryCount();
+}
+
+function loadFromHistory(id) {
+  var matches = loadHistoryList().filter(function(r) { return r.id === id; });
+  var rec = matches.length ? matches[0] : null;
+  if (!rec) return;
+
+  // Textová pole
+  var textMap = {
+    'customer-name': rec.name, 'move-date': rec.date, 'customer-phone': rec.phone,
+    'move-from': rec.from, 'move-to': rec.to, 'notes': rec.notes
+  };
+  Object.keys(textMap).forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.value = textMap[id] || '';
+  });
+
+  var savedS = rec.state;
+
+  // Čísla
+  var numMap = {
+    'hours': savedS.hours, 'distance': savedS.distance, 'second-car-km': savedS.secondCarKm,
+    'heavy-items': savedS.heavyItems, 'fragile-items': savedS.fragileItems,
+    'boxes': savedS.boxes, 'stretch': savedS.stretch, 'bubble': savedS.bubble,
+    'assembly-hours': savedS.assemblyHours, 'appliances': savedS.appliances, 'day-before': savedS.dayBefore
+  };
+  Object.keys(numMap).forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.value = numMap[id];
+  });
+
+  // Toggly
+  var toggleMap = {
+    'second-car': savedS.secondCar, 'elevator-load': savedS.elevatorLoad, 'narrow-load': savedS.narrowLoad,
+    'basement-load': savedS.basementLoad, 'elevator-unload': savedS.elevatorUnload, 'narrow-unload': savedS.narrowUnload,
+    'basement-unload': savedS.basementUnload, 'city-center': savedS.cityCenter, 'highway': savedS.highway,
+    'parking-issue': savedS.parkingIssue, 'person-transport': savedS.personTransport, 'urgency': savedS.urgency,
+    'customer-helps': savedS.customerHelps, 'liquidation': savedS.liquidation, 'dump-transport': savedS.dumpTransport,
+    'discount10': savedS.discount10
+  };
+  Object.keys(toggleMap).forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.checked = !!toggleMap[id];
+  });
+
+  // Sub panely
+  var subSecondCar = document.getElementById('sub-second-car');
+  if (subSecondCar) subSecondCar.classList.toggle('on', !!savedS.secondCar);
+  var subLiquidation = document.getElementById('sub-liquidation');
+  if (subLiquidation) subLiquidation.classList.toggle('on', !!savedS.liquidation);
+  var subPacking = document.getElementById('sub-packing');
+  if (subPacking) subPacking.classList.toggle('on', savedS.packingType === 'custom');
+
+  // Chipy
+  function setChip(groupId, value) {
+    var g = document.getElementById(groupId);
+    if (!g) return;
+    g.querySelectorAll('.chip').forEach(function(c) { c.classList.remove('on'); });
+    var target = g.querySelector('[data-v="' + value + '"]');
+    if (target) target.classList.add('on');
+  }
+  setChip('workers-chips', savedS.workers);
+  setChip('floor-load-chips', savedS.floorLoad);
+  setChip('floor-unload-chips', savedS.floorUnload);
+  setChip('extra-stops-chips', savedS.extraStops);
+  setChip('pytlovani-chips', savedS.pytlovani);
+
+  // Select
+  var ps = document.getElementById('packing-type');
+  if (ps) ps.value = savedS.packingType;
+
+  S = JSON.parse(JSON.stringify(savedS));
+  render();
+  closeHistory();
+}
+
+updateHistoryCount();
 
 render();
 </script>
